@@ -1,8 +1,8 @@
 import sqlite3
 import streamlit as st
 
-# Set up page configurations with school name
-st.set_page_config(page_title="Adventist Senior High - PTA Portal", page_icon="💳", layout="centered")
+# Set up clean page configurations
+st.set_page_config(page_title="Adventist Senior High - PTA Portal", page_icon="💳", layout="wide")
 
 # --- DATABASE SETUP ---
 DB_FILE = "pta_records.db"
@@ -18,7 +18,6 @@ def init_db():
             status TEXT
         )
     """)
-    # Insert default data if table is completely empty
     cursor.execute("SELECT COUNT(*) FROM students")
     if cursor.fetchone()[0] == 0:
         cursor.executemany("""
@@ -30,14 +29,11 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Initialize database
 init_db()
 
-# Helper database functions
 def get_student_by_name(full_name):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    # Case-insensitive lookup for full name
     cursor.execute("SELECT id, name, class, status FROM students WHERE LOWER(name) = LOWER(?)", (full_name,))
     result = cursor.fetchone()
     conn.close()
@@ -80,12 +76,11 @@ def delete_student(id):
     conn.close()
 
 
-# Set your secure admin passcode here
 ADMIN_PASSCODE = "secure123"
 
 # --- SIDEBAR NAVIGATION ---
-st.sidebar.title("Navigation Menu")
-user_role = st.sidebar.radio("Select Portal:", ["Student Dashboard", "Admin Dashboard"])
+st.sidebar.markdown("### 🏫 Portal Menu")
+user_role = st.sidebar.radio("Select View:", ["Student Dashboard", "Admin Dashboard"])
 
 # --- STUDENT DASHBOARD ---
 if user_role == "Student Dashboard":
@@ -99,90 +94,94 @@ if user_role == "Student Dashboard":
         student = get_student_by_name(search_name)
         if student:
             st.success(f"Record found for **{student['name']}**")
-            
-            # Display colored status blocks
             if student['status'] == "Paid":
                 st.info("🟢 **Payment Status:** Fully Paid")
             else:
                 st.warning("🟡 **Payment Status:** Pending / Unpaid")
                 
-            # Clean summary display
             st.markdown(f"""
             * **Student ID:** {student['id']}
             * **Class:** {student['class']}
             """)
         else:
-            st.error("No record found matching this name. Please verify the spelling or check with the administrator.")
+            st.error("No record found matching this name. Please check your spelling or contact administration.")
 
-# --- ADMIN DASHBOARD ---
+# --- MODERN ADMIN DASHBOARD ---
 elif user_role == "Admin Dashboard":
-    st.title("⚙️ Adventist Senior High Portal")
-    st.subheader("PTA Administration Management")
+    st.title("⚙️ PTA Administration Hub")
+    st.markdown("##### Adventist Senior High Management Portal")
     
-    # Secure Lock check
     entered_passcode = st.text_input("Enter Admin Passcode to login:", type="password")
     
     if entered_passcode == ADMIN_PASSCODE:
-        st.success("Access Granted.")
-        
-        # Form to add a new student
-        st.subheader("➕ Add New Student Record")
-        with st.form("add_student_form", clear_on_submit=True):
-            stu_id = st.text_input("Unique Student ID:").strip().upper()
-            stu_name = st.text_input("Student Full Name:")
-            stu_class = st.text_input("Class / Form:")
-            stu_status = st.selectbox("Payment Status:", ["Paid", "Pending"])
-            
-            submit_button = st.form_submit_button("Save Student Record")
-            
-            if submit_button:
-                if not stu_id or not stu_name or not stu_class:
-                    st.error("All fields are required to register a student.")
-                else:
-                    success = add_student(stu_id, stu_name, stu_class, stu_status)
-                    if success:
-                        st.success(f"Successfully added {stu_name} to the system!")
-                        st.rerun()
-                    else:
-                        st.error(f"Error: A student with ID {stu_id} already exists.")
-
-        st.markdown("---")
-        
-        # Displaying and Managing current data
-        st.subheader("📋 Registered Students & Payment Records")
         all_students = get_all_students()
         
-        if not all_students:
-            st.write("No students registered yet.")
-        else:
-            # Table Header layout
-            col1, col2, col3, col4 = st.columns([1.5, 2.5, 2, 1.5])
-            col1.markdown("**ID**")
-            col2.markdown("**Name**")
-            col3.markdown("**Status**")
-            col4.markdown("**Action**")
-            
-            # Generate individual row control for management
-            for current_id, info in all_students.items():
-                c1, c2, c3, c4 = st.columns([1.5, 2.5, 2, 1.5])
-                c1.text(current_id)
-                c2.text(info['name'])
+        # --- APP METRICS BLOCK ---
+        total_count = len(all_students)
+        paid_count = sum(1 for info in all_students.values() if info['status'] == "Paid")
+        pending_count = total_count - paid_count
+        
+        st.markdown("---")
+        m_col1, m_col2, m_col3 = st.columns(3)
+        m_col1.metric("Total Registered", total_count)
+        m_col2.metric("Fully Paid", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Total")
+        m_col3.metric("Pending Balance", pending_count)
+        st.markdown("---")
+        
+        # --- TABBED LAYOUT ---
+        tab1, tab2 = st.tabs(["📋 Student Records", "➕ Register New Student"])
+        
+        with tab1:
+            st.subheader("Active Student Directory")
+            if not all_students:
+                st.info("No students registered yet.")
+            else:
+                col1, col2, col3, col4 = st.columns([1.5, 3.0, 2.0, 1.5])
+                col1.markdown("**ID**")
+                col2.markdown("**Full Name**")
+                col3.markdown("**Dues Status**")
+                col4.markdown("**Actions**")
+                st.markdown(" ")
                 
-                # Interactive status dropdown to update status live
-                status_list = ["Paid", "Pending"]
-                current_idx = status_list.index(info['status'])
-                new_status = c3.selectbox(
-                    "Update Status", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
-                )
-                
-                if new_status != info['status']:
-                    update_student_status(current_id, new_status)
-                    st.rerun()
-                
-                # Quick Delete button
-                if c4.button("🗑️ Delete", key=f"del_{current_id}"):
-                    delete_student(current_id)
-                    st.rerun()
+                for current_id, info in all_students.items():
+                    c1, c2, c3, c4 = st.columns([1.5, 3.0, 2.0, 1.5])
+                    c1.text(current_id)
+                    c2.text(info['name'])
                     
+                    status_list = ["Paid", "Pending"]
+                    current_idx = status_list.index(info['status'])
+                    new_status = c3.selectbox(
+                        "Update Status", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
+                    )
+                    
+                    if new_status != info['status']:
+                        update_student_status(current_id, new_status)
+                        st.rerun()
+                    
+                    if c4.button("🗑️ Remove", key=f"del_{current_id}"):
+                        delete_student(current_id)
+                        st.rerun()
+                        
+        with tab2:
+            st.subheader("Add Student Information")
+            with st.form("add_student_form", clear_on_submit=True):
+                stu_id = st.text_input("Unique Student ID:").strip().upper()
+                stu_name = st.text_input("Student Full Name:")
+                stu_class = st.text_input("Class / Form:")
+                stu_status = st.selectbox("Current Status:", ["Paid", "Pending"])
+                
+                submit_button = st.form_submit_button("Save Student to Database")
+                
+                if submit_button:
+                    if not stu_id or not stu_name or not stu_class:
+                        st.error("All input fields are required.")
+                    else:
+                        success = add_student(stu_id, stu_name, stu_class, stu_status)
+                        if success:
+                            st.success(f"Successfully added {stu_name}!")
+                            st.rerun()
+                        else:
+                            st.error(f"Error: A student with ID {stu_id} already exists.")
+                            
     elif entered_passcode != "":
         st.error("Incorrect passcode. Access denied.")
