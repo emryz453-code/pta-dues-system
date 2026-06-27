@@ -93,13 +93,14 @@ ADMIN_PASSCODE = "secure123"
 st.markdown("""
     <style>
     .navbar {
-        background-color: #1E3A8A;
+        background-color: skyblue;
         padding: 15px;
         border-radius: 8px;
         margin-bottom: 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow:0 0 6px 0 black;
     }
     .navbar-title {
         color: white !important;
@@ -109,7 +110,7 @@ st.markdown("""
     }
     </style>
     <div class="navbar">
-        <div class="navbar-title">🏫 Adventist Senior High School</div>
+        <div class="navbar-title"> Adventist Senior High School</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -125,7 +126,7 @@ if st.session_state.current_page == "Welcome":
     st.markdown("---")
     st.write("To get started, access our dedicated portal endpoints directly using the control router below:")
     
-    if st.button("🚀 Access Portal Selection Screen", use_container_width=True):
+    if st.button("Access Portal Selection Screen", use_container_width=True):
         st.session_state.current_page = "Portal Selection"
         st.rerun()
 
@@ -151,14 +152,14 @@ elif st.session_state.current_page == "Portal Selection":
             st.rerun()
             
     st.markdown("---")
-    if st.button("↩️ Return to Home Landing Page"):
+    if st.button(" Return to Home Landing Page"):
         st.session_state.current_page = "Welcome"
         st.rerun()
 
 
 # --- VIEW 3: STUDENT DASHBOARD ---
 elif st.session_state.current_page == "Student Dashboard":
-    st.title("🎓 Student Verification Dashboard")
+    st.title(" Student Verification Dashboard")
     st.write("Enter your Full Name below to check live financial status accounts.")
     
     search_name = st.text_input("Enter Student Full Name:", placeholder="e.g., Kwame Mensah").strip()
@@ -180,10 +181,10 @@ elif st.session_state.current_page == "Student Dashboard":
             st.error("No valid system record matches that name configuration. Check spellings or consult administration fields.")
             
     st.markdown("---")
-    if st.button("⚙️ Switch to Admin View"):
+    if st.button(" Switch to Admin View"):
         st.session_state.current_page = "Admin Dashboard"
         st.rerun()
-    if st.button("↩️ Back to Selection Screen"):
+    if st.button(" Back to Selection Screen"):
         st.session_state.current_page = "Portal Selection"
         st.rerun()
 
