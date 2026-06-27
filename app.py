@@ -34,14 +34,15 @@ def init_db():
 init_db()
 
 # Helper database functions
-def get_student(student_id):
+def get_student_by_name(full_name):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT name, class, status FROM students WHERE id = ?", (student_id,))
+    # Case-insensitive lookup for full name
+    cursor.execute("SELECT id, name, class, status FROM students WHERE LOWER(name) = LOWER(?)", (full_name,))
     result = cursor.fetchone()
     conn.close()
     if result:
-        return {"name": result[0], "class": result[1], "status": result[2]}
+        return {"id": result[0], "name": result[1], "class": result[2], "status": result[3]}
     return None
 
 def get_all_students():
@@ -90,12 +91,12 @@ user_role = st.sidebar.radio("Select Portal:", ["Student Dashboard", "Admin Dash
 if user_role == "Student Dashboard":
     st.title("🎓 Adventist Senior High")
     st.subheader("PTA Dues Verification Portal")
-    st.write("Enter your unique Student ID below to verify your payment status.")
+    st.write("Enter your Full Name below to verify your payment status.")
     
-    search_id = st.text_input("Enter Student ID:", placeholder="e.g., STU001").strip().upper()
+    search_name = st.text_input("Enter Your Full Name:", placeholder="e.g., Kwame Mensah").strip()
     
-    if search_id:
-        student = get_student(search_id)
+    if search_name:
+        student = get_student_by_name(search_name)
         if student:
             st.success(f"Record found for **{student['name']}**")
             
@@ -107,11 +108,11 @@ if user_role == "Student Dashboard":
                 
             # Clean summary display
             st.markdown(f"""
-            * **Student ID:** {search_id}
+            * **Student ID:** {student['id']}
             * **Class:** {student['class']}
             """)
         else:
-            st.error("No record found for this Student ID. Please double-check or visit the administration office.")
+            st.error("No record found matching this name. Please verify the spelling or check with the administrator.")
 
 # --- ADMIN DASHBOARD ---
 elif user_role == "Admin Dashboard":
