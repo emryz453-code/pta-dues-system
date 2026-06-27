@@ -50,6 +50,7 @@ def init_db():
         ])
     conn.commit()
     conn.close()
+    cursor.execute("SELECT COUNT(*) FROM students")
     if cursor.fetchone()[0] == 0:
         cursor.executemany("""
             INSERT INTO students (id, name, class, track, house, status) VALUES (?, ?, ?, ?, ?, ?)
