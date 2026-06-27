@@ -78,9 +78,17 @@ def delete_student(id):
 
 ADMIN_PASSCODE = "secure123"
 
+# Initialize logged_in state if it doesn't exist
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
 # --- SIDEBAR NAVIGATION ---
 st.sidebar.markdown("### 🏫 Portal Menu")
 user_role = st.sidebar.radio("Select View:", ["Student Dashboard", "Admin Dashboard"])
+
+# If the user switches back to the Student view, reset admin login status for safety
+if user_role == "Student Dashboard":
+    st.session_state.logged_in = False
 
 # --- STUDENT DASHBOARD ---
 if user_role == "Student Dashboard":
@@ -108,12 +116,35 @@ if user_role == "Student Dashboard":
 
 # --- MODERN ADMIN DASHBOARD ---
 elif user_role == "Admin Dashboard":
-    st.title("⚙️ PTA Administration Hub")
-    st.markdown("##### Adventist Senior High Management Portal")
-    
-    entered_passcode = st.text_input("Enter Admin Passcode to login:", type="password")
-    
-    if entered_passcode == ADMIN_PASSCODE:
+    # Screen 1: Login Screen (Only shows if NOT logged in)
+    if not st.session_state.logged_in:
+        st.title("⚙️ PTA Administration Gateway")
+        st.markdown("##### Adventist Senior High Management Portal")
+        
+        with st.form("login_form"):
+            entered_passcode = st.text_input("Enter Admin Passcode to login:", type="password")
+            login_submitted = st.form_submit_button("Access Dashboard")
+            
+            if login_submitted:
+                if entered_passcode == ADMIN_PASSCODE:
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect passcode. Access denied.")
+
+    # Screen 2: The Actual Dashboard (Only shows AFTER successful login)
+    else:
+        # Header area with a logout button
+        h_col1, h_col2 = st.columns([5, 1])
+        with h_col1:
+            st.title("⚙️ PTA Administration Hub")
+            st.markdown("##### Welcome Back, Administrator")
+        with h_col2:
+            st.markdown(" ")
+            if st.button("🔒 Log Out"):
+                st.session_state.logged_in = False
+                st.rerun()
+                
         all_students = get_all_students()
         
         # --- APP METRICS BLOCK ---
@@ -182,6 +213,3 @@ elif user_role == "Admin Dashboard":
                             st.rerun()
                         else:
                             st.error(f"Error: A student with ID {stu_id} already exists.")
-                            
-    elif entered_passcode != "":
-        st.error("Incorrect passcode. Access denied.")
