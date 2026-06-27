@@ -1,12 +1,12 @@
 import sqlite3
 import streamlit as st
 
-# --- PAGE SETUP & THEME INITIALIZATION ---
+# --- PAGE SETUP & MODERN GRAPHICS THEME ---
 st.set_page_config(
     page_title="Adventist Senior High - PTA Portal", 
     page_icon="💳", 
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # --- DATABASE ENGINE ---
@@ -20,16 +20,18 @@ def init_db():
             id TEXT PRIMARY KEY,
             name TEXT,
             class TEXT,
+            track TEXT,
+            house TEXT,
             status TEXT
         )
     """)
     cursor.execute("SELECT COUNT(*) FROM students")
     if cursor.fetchone()[0] == 0:
         cursor.executemany("""
-            INSERT INTO students (id, name, class, status) VALUES (?, ?, ?, ?)
+            INSERT INTO students (id, name, class, track, house, status) VALUES (?, ?, ?, ?, ?, ?)
         """, [
-            ("STU001", "Kwame Mensah", "Form 3A", "Paid"),
-            ("STU002", "Ama Serwaa", "Form 2B", "Pending")
+            ("STU001", "Kwame Mensah", "Form 3", "General Science", "Kennedy House", "Paid"),
+            ("STU002", "Ama Serwaa", "Form 2", "Business", "Aggregation House", "Pending")
         ])
     conn.commit()
     conn.close()
@@ -39,26 +41,26 @@ init_db()
 def get_student_by_name(full_name):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, class, status FROM students WHERE LOWER(name) = LOWER(?)", (full_name,))
+    cursor.execute("SELECT id, name, class, track, house, status FROM students WHERE LOWER(name) = LOWER(?)", (full_name,))
     result = cursor.fetchone()
     conn.close()
     if result:
-        return {"id": result[0], "name": result[1], "class": result[2], "status": result[3]}
+        return {"id": result[0], "name": result[1], "class": result[2], "track": result[3], "house": result[4], "status": result[5]}
     return None
 
 def get_all_students():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, class, status FROM students")
+    cursor.execute("SELECT id, name, class, track, house, status FROM students")
     rows = cursor.fetchall()
     conn.close()
-    return {row[0]: {"name": row[1], "class": row[2], "status": row[3]} for row in rows}
+    return {row[0]: {"name": row[1], "class": row[2], "track": row[3], "house": row[4], "status": row[5]} for row in rows}
 
-def add_student(id, name, cls, status):
+def add_student(id, name, cls, track, house, status):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO students (id, name, class, status) VALUES (?, ?, ?, ?)", (id, name, cls, status))
+        cursor.execute("INSERT INTO students (id, name, class, track, house, status) VALUES (?, ?, ?, ?, ?, ?)", (id, name, cls, track, house, status))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -89,49 +91,48 @@ if "current_page" not in st.session_state:
 
 ADMIN_PASSCODE = "secure123"
 
-# --- GLOBAL CUSTOM NAVBAR COMPONENT ---
+# --- GLOBAL STYLED NAVBAR ---
 st.markdown("""
     <style>
     .navbar {
-        background-color: skyblue;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 25px;
+        background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow:0 0 6px 0 black;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     .navbar-title {
         color: white !important;
-        font-size: 24px !important;
-        font-weight: bold;
+        font-size: 26px !important;
+        font-weight: 700;
         margin: 0;
+        font-family: 'Inter', sans-serif;
     }
     </style>
     <div class="navbar">
-        <div class="navbar-title"> Adventist Senior High School</div>
+        <div class="navbar-title">🏫 Adventist Senior High School</div>
     </div>
 """, unsafe_allow_html=True)
 
 
-# --- ROUTING LOGIC BASED ON USER NAVIGATION ---
+# --- ROUTING PLATFORM ENGINE ---
 
-# --- VIEW 1: WELCOME/LANDING PAGE ---
+# --- PAGE 1: WELCOME/LANDING PAGE ---
 if st.session_state.current_page == "Welcome":
     st.title("Welcome to the PTA Portal")
     st.markdown("### Secure Payment Tracking & Status Verification")
     st.write("Welcome to the official Adventist Senior High PTA portal. This platform allows parents and students to securely check dues balances, while providing administrative functions to authorized staff members.")
     
     st.markdown("---")
-    st.write("To get started, access our dedicated portal endpoints directly using the control router below:")
-    
-    if st.button("Access Portal Selection Screen", use_container_width=True):
+    if st.button("🚀 Access Portal Selection Screen", use_container_width=True):
         st.session_state.current_page = "Portal Selection"
         st.rerun()
 
 
-# --- VIEW 2: PORTAL SELECTION INTERFACE ---
+# --- PAGE 2: PORTAL SELECTION INTERFACE ---
 elif st.session_state.current_page == "Portal Selection":
     st.subheader("Select Your Destination Portal")
     
@@ -152,14 +153,14 @@ elif st.session_state.current_page == "Portal Selection":
             st.rerun()
             
     st.markdown("---")
-    if st.button(" Return to Home Landing Page"):
+    if st.button("↩️ Return to Home Landing Page"):
         st.session_state.current_page = "Welcome"
         st.rerun()
 
 
-# --- VIEW 3: STUDENT DASHBOARD ---
+# --- PAGE 3: STUDENT DASHBOARD ---
 elif st.session_state.current_page == "Student Dashboard":
-    st.title(" Student Verification Dashboard")
+    st.title("🎓 Student Verification Dashboard")
     st.write("Enter your Full Name below to check live financial status accounts.")
     
     search_name = st.text_input("Enter Student Full Name:", placeholder="e.g., Kwame Mensah").strip()
@@ -176,20 +177,19 @@ elif st.session_state.current_page == "Student Dashboard":
             st.markdown(f"""
             * **Assigned Unique ID:** {student['id']}
             * **Current Registered Form:** {student['class']}
+            * **Academic Program Track:** {student['track']}
+            * **House of Residence:** {student['house']}
             """)
         else:
             st.error("No valid system record matches that name configuration. Check spellings or consult administration fields.")
             
     st.markdown("---")
-    if st.button(" Switch to Admin View"):
-        st.session_state.current_page = "Admin Dashboard"
-        st.rerun()
-    if st.button(" Back to Selection Screen"):
+    if st.button("↩️ Back to Selection Screen", use_container_width=True):
         st.session_state.current_page = "Portal Selection"
         st.rerun()
 
 
-# --- VIEW 4: ADMIN DASHBOARD ---
+# --- PAGE 4: MODERN ADASSHUB LOVABLE-STYLE ADMIN PANEL ---
 elif st.session_state.current_page == "Admin Dashboard":
     if not st.session_state.logged_in:
         st.title("🔒 Security Access Required")
@@ -212,29 +212,29 @@ elif st.session_state.current_page == "Admin Dashboard":
             st.rerun()
 
     else:
-        # Dashboard Header Section
+        # Dashboard Header Section with a Lovable-style clean layout
         h_col1, h_col2 = st.columns([5, 1])
         with h_col1:
-            st.title("⚙️ Core Administration Database Workspace")
-            st.markdown("##### Identity Context: Active Root Administrator")
+            st.title("⚙️ Administration Hub")
+            st.markdown("##### System Environment: Active Data Administrator")
         with h_col2:
             st.markdown(" ")
-            if st.button("🔒 Revoke Session (Logout)", use_container_width=True):
+            if st.button("🔒 Revoke Session", use_container_width=True):
                 st.session_state.logged_in = False
                 st.session_state.current_page = "Portal Selection"
                 st.rerun()
                 
         all_students = get_all_students()
         
-        # Real-time Visual App Analytics Metrics
+        # Real-time Web App Metrics
         total_count = len(all_students)
         paid_count = sum(1 for info in all_students.values() if info['status'] == "Paid")
         pending_count = total_count - paid_count
         
         st.markdown("---")
         m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Database Indexes", total_count)
-        m_col2.metric("Settled ledgers", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Total Allocation")
+        m_col1.metric("Total Active Indexes", total_count)
+        m_col2.metric("Settled Ledgers (Paid)", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Allocation")
         m_col3.metric("Outstanding Accounts", pending_count)
         st.markdown("---")
         
@@ -246,47 +246,64 @@ elif st.session_state.current_page == "Admin Dashboard":
             if not all_students:
                 st.info("Empty database instances returned.")
             else:
-                col1, col2, col3, col4 = st.columns([1.5, 3.0, 2.0, 1.5])
-                col1.markdown("**System ID**")
-                col2.markdown("**User Entity Name**")
-                col3.markdown("**Dues Class State**")
-                col4.markdown("**Execution Array**")
+                col1, col2, col3, col4, col5, col6 = st.columns([1.0, 2.0, 1.0, 1.5, 1.5, 1.0])
+                col1.markdown("**ID**")
+                col2.markdown("**Name**")
+                col3.markdown("**Form**")
+                col4.markdown("**Academic Track**")
+                col5.markdown("**House**")
+                col6.markdown("**Status / Action**")
                 st.markdown(" ")
                 
                 for current_id, info in all_students.items():
-                    c1, c2, c3, c4 = st.columns([1.5, 3.0, 2.0, 1.5])
+                    c1, c2, c3, c4, c5, c6 = st.columns([1.0, 2.0, 1.0, 1.5, 1.5, 1.0])
                     c1.text(current_id)
                     c2.text(info['name'])
+                    c3.text(info['class'])
+                    c4.text(info['track'])
+                    c5.text(info['house'])
                     
                     status_list = ["Paid", "Pending"]
                     current_idx = status_list.index(info['status'])
-                    new_status = c3.selectbox(
+                    new_status = c6.selectbox(
                         "Modify State", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
                     )
                     
                     if new_status != info['status']:
                         update_student_status(current_id, new_status)
                         st.rerun()
-                    
-                    if c4.button("🗑️ Drop Row", key=f"del_{current_id}", use_container_width=True):
-                        delete_student(current_id)
-                        st.rerun()
                         
         with tab2:
             st.subheader("Write Fresh Structural Student Block")
+            # --- CUSTOM RESTRUCTURED FORM (LOVABLE-STYLE DATA PANEL GRID) ---
             with st.form("add_student_form", clear_on_submit=True):
-                stu_id = st.text_input("New Registration Key (Unique ID):").strip().upper()
-                stu_name = st.text_input("Full Legal Name Entry:")
-                stu_class = st.text_input("Assigned Class Module / Form:")
-                stu_status = st.selectbox("Initial Financial State:", ["Paid", "Pending"])
+                f_col1, f_col2 = st.columns(2)
                 
-                submit_button = st.form_submit_button("Commit Entry To SQLite Disk Data Store")
+                with f_col1:
+                    stu_id = st.text_input("New Registration Key (Unique ID):", placeholder="e.g., ASHS-2026-001").strip().upper()
+                    stu_name = st.text_input("Full Legal Name Entry:", placeholder="e.g., Emmanuel Mensah")
+                    stu_class = st.selectbox("Assigned Form / Year Group:", ["Form 1", "Form 2", "Form 3"])
+                
+                with f_col2:
+                    stu_track = st.selectbox("Academic Track / Program:", [
+                        "General Science", 
+                        "General Arts", 
+                        "Business", 
+                        "Home Economics", 
+                        "Visual Arts",
+                        "Agricultural Science"
+                    ])
+                    stu_house = st.text_input("House of Residence / Dormitory:", placeholder="e.g., Kennedy House")
+                    stu_status = st.selectbox("Initial Financial State:", ["Paid", "Pending"])
+                
+                st.markdown(" ")
+                submit_button = st.form_submit_button("Commit Entry To SQLite Disk Data Store", use_container_width=True)
                 
                 if submit_button:
-                    if not stu_id or not stu_name or not stu_class:
+                    if not stu_id or not stu_name or not stu_house:
                         st.error("Structural integrity violation: Null field instances detected.")
                     else:
-                        success = add_student(stu_id, stu_name, stu_class, stu_status)
+                        success = add_student(stu_id, stu_name, stu_class, stu_track, stu_house, stu_status)
                         if success:
                             st.success(f"Write validation success: Created entry tracking record for {stu_name}!")
                             st.rerun()
