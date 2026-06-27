@@ -1,10 +1,15 @@
 import sqlite3
 import streamlit as st
 
-# Set up clean page configurations
-st.set_page_config(page_title="Adventist Senior High - PTA Portal", page_icon="💳", layout="wide")
+# --- PAGE SETUP & THEME INITIALIZATION ---
+st.set_page_config(
+    page_title="Adventist Senior High - PTA Portal", 
+    page_icon="💳", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# --- DATABASE SETUP ---
+# --- DATABASE ENGINE ---
 DB_FILE = "pta_records.db"
 
 def init_db():
@@ -76,102 +81,175 @@ def delete_student(id):
     conn.close()
 
 
-ADMIN_PASSCODE = "secure123"
-
-# Initialize logged_in state if it doesn't exist
+# --- SESSION MANAGEMENT ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "Welcome"
 
-# --- SIDEBAR NAVIGATION ---
-st.sidebar.markdown("### 🏫 Portal Menu")
-user_role = st.sidebar.radio("Select View:", ["Student Dashboard", "Admin Dashboard"])
+ADMIN_PASSCODE = "secure123"
 
-# If the user switches back to the Student view, reset admin login status for safety
-if user_role == "Student Dashboard":
-    st.session_state.logged_in = False
+# --- GLOBAL CUSTOM NAVBAR COMPONENT ---
+st.markdown("""
+    <style>
+    .navbar {
+        background-color: #1E3A8A;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .navbar-title {
+        color: white !important;
+        font-size: 24px !important;
+        font-weight: bold;
+        margin: 0;
+    }
+    </style>
+    <div class="navbar">
+        <div class="navbar-title">🏫 Adventist Senior High School</div>
+    </div>
+""", unsafe_allow_html=True)
 
-# --- STUDENT DASHBOARD ---
-if user_role == "Student Dashboard":
-    st.title("🎓 Adventist Senior High")
-    st.subheader("PTA Dues Verification Portal")
-    st.write("Enter your Full Name below to verify your payment status.")
+
+# --- ROUTING LOGIC BASED ON USER NAVIGATION ---
+
+# --- VIEW 1: WELCOME/LANDING PAGE ---
+if st.session_state.current_page == "Welcome":
+    st.title("Welcome to the PTA Portal")
+    st.markdown("### Secure Payment Tracking & Status Verification")
+    st.write("Welcome to the official Adventist Senior High PTA portal. This platform allows parents and students to securely check dues balances, while providing administrative functions to authorized staff members.")
     
-    search_name = st.text_input("Enter Your Full Name:", placeholder="e.g., Kwame Mensah").strip()
+    st.markdown("---")
+    st.write("To get started, access our dedicated portal endpoints directly using the control router below:")
+    
+    if st.button("🚀 Access Portal Selection Screen", use_container_width=True):
+        st.session_state.current_page = "Portal Selection"
+        st.rerun()
+
+
+# --- VIEW 2: PORTAL SELECTION INTERFACE ---
+elif st.session_state.current_page == "Portal Selection":
+    st.subheader("Select Your Destination Portal")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.info("### 🎓 Student Directory Portal")
+        st.write("Verify status live on the network using formal registration credentials.")
+        if st.button("Enter Student View", use_container_width=True):
+            st.session_state.current_page = "Student Dashboard"
+            st.rerun()
+            
+    with col2:
+        st.warning("### ⚙️ Administrative Hub")
+        st.write("Secure database controller operations. Requires validation passcode.")
+        if st.button("Enter Admin View", use_container_width=True):
+            st.session_state.current_page = "Admin Dashboard"
+            st.rerun()
+            
+    st.markdown("---")
+    if st.button("↩️ Return to Home Landing Page"):
+        st.session_state.current_page = "Welcome"
+        st.rerun()
+
+
+# --- VIEW 3: STUDENT DASHBOARD ---
+elif st.session_state.current_page == "Student Dashboard":
+    st.title("🎓 Student Verification Dashboard")
+    st.write("Enter your Full Name below to check live financial status accounts.")
+    
+    search_name = st.text_input("Enter Student Full Name:", placeholder="e.g., Kwame Mensah").strip()
     
     if search_name:
         student = get_student_by_name(search_name)
         if student:
-            st.success(f"Record found for **{student['name']}**")
+            st.success(f"Record matched for system entity: **{student['name']}**")
             if student['status'] == "Paid":
-                st.info("🟢 **Payment Status:** Fully Paid")
+                st.info("🟢 **Payment Ledger Status:** Verified Fully Paid")
             else:
-                st.warning("🟡 **Payment Status:** Pending / Unpaid")
+                st.warning("🟡 **Payment Ledger Status:** Account Pending / Balance Unpaid")
                 
             st.markdown(f"""
-            * **Student ID:** {student['id']}
-            * **Class:** {student['class']}
+            * **Assigned Unique ID:** {student['id']}
+            * **Current Registered Form:** {student['class']}
             """)
         else:
-            st.error("No record found matching this name. Please check your spelling or contact administration.")
-
-# --- MODERN ADMIN DASHBOARD ---
-elif user_role == "Admin Dashboard":
-    # Screen 1: Login Screen (Only shows if NOT logged in)
-    if not st.session_state.logged_in:
-        st.title("⚙️ PTA Administration Gateway")
-        st.markdown("##### Adventist Senior High Management Portal")
-        
-        with st.form("login_form"):
-            entered_passcode = st.text_input("Enter Admin Passcode to login:", type="password")
-            login_submitted = st.form_submit_button("Access Dashboard")
+            st.error("No valid system record matches that name configuration. Check spellings or consult administration fields.")
             
-            if login_submitted:
+    st.markdown("---")
+    if st.button("⚙️ Switch to Admin View"):
+        st.session_state.current_page = "Admin Dashboard"
+        st.rerun()
+    if st.button("↩️ Back to Selection Screen"):
+        st.session_state.current_page = "Portal Selection"
+        st.rerun()
+
+
+# --- VIEW 4: ADMIN DASHBOARD ---
+elif st.session_state.current_page == "Admin Dashboard":
+    if not st.session_state.logged_in:
+        st.title("🔒 Security Access Required")
+        st.write("Enter system authorization key to clear network interface access routines.")
+        
+        with st.form("admin_login_container"):
+            entered_passcode = st.text_input("Security Access Passcode:", type="password")
+            login_trigger = st.form_submit_button("Verify Passcode Credentials")
+            
+            if login_trigger:
                 if entered_passcode == ADMIN_PASSCODE:
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("Incorrect passcode. Access denied.")
+                    st.error("Invalid passcode token entry sequence. Authentication rejected.")
+                    
+        st.markdown("---")
+        if st.button("↩️ Abort & Back to Portal Selection"):
+            st.session_state.current_page = "Portal Selection"
+            st.rerun()
 
-    # Screen 2: The Actual Dashboard (Only shows AFTER successful login)
     else:
-        # Header area with a logout button
+        # Dashboard Header Section
         h_col1, h_col2 = st.columns([5, 1])
         with h_col1:
-            st.title("⚙️ PTA Administration Hub")
-            st.markdown("##### Welcome Back, Administrator")
+            st.title("⚙️ Core Administration Database Workspace")
+            st.markdown("##### Identity Context: Active Root Administrator")
         with h_col2:
             st.markdown(" ")
-            if st.button("🔒 Log Out"):
+            if st.button("🔒 Revoke Session (Logout)", use_container_width=True):
                 st.session_state.logged_in = False
+                st.session_state.current_page = "Portal Selection"
                 st.rerun()
                 
         all_students = get_all_students()
         
-        # --- APP METRICS BLOCK ---
+        # Real-time Visual App Analytics Metrics
         total_count = len(all_students)
         paid_count = sum(1 for info in all_students.values() if info['status'] == "Paid")
         pending_count = total_count - paid_count
         
         st.markdown("---")
         m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Total Registered", total_count)
-        m_col2.metric("Fully Paid", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Total")
-        m_col3.metric("Pending Balance", pending_count)
+        m_col1.metric("Database Indexes", total_count)
+        m_col2.metric("Settled ledgers", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Total Allocation")
+        m_col3.metric("Outstanding Accounts", pending_count)
         st.markdown("---")
         
-        # --- TABBED LAYOUT ---
-        tab1, tab2 = st.tabs(["📋 Student Records", "➕ Register New Student"])
+        # Tabbed Control Structures
+        tab1, tab2 = st.tabs(["📋 View Directory Records", "➕ Write New Database Entries"])
         
         with tab1:
-            st.subheader("Active Student Directory")
+            st.subheader("System Data Storage Registry")
             if not all_students:
-                st.info("No students registered yet.")
+                st.info("Empty database instances returned.")
             else:
                 col1, col2, col3, col4 = st.columns([1.5, 3.0, 2.0, 1.5])
-                col1.markdown("**ID**")
-                col2.markdown("**Full Name**")
-                col3.markdown("**Dues Status**")
-                col4.markdown("**Actions**")
+                col1.markdown("**System ID**")
+                col2.markdown("**User Entity Name**")
+                col3.markdown("**Dues Class State**")
+                col4.markdown("**Execution Array**")
                 st.markdown(" ")
                 
                 for current_id, info in all_students.items():
@@ -182,34 +260,34 @@ elif user_role == "Admin Dashboard":
                     status_list = ["Paid", "Pending"]
                     current_idx = status_list.index(info['status'])
                     new_status = c3.selectbox(
-                        "Update Status", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
+                        "Modify State", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
                     )
                     
                     if new_status != info['status']:
                         update_student_status(current_id, new_status)
                         st.rerun()
                     
-                    if c4.button("🗑️ Remove", key=f"del_{current_id}"):
+                    if c4.button("🗑️ Drop Row", key=f"del_{current_id}", use_container_width=True):
                         delete_student(current_id)
                         st.rerun()
                         
         with tab2:
-            st.subheader("Add Student Information")
+            st.subheader("Write Fresh Structural Student Block")
             with st.form("add_student_form", clear_on_submit=True):
-                stu_id = st.text_input("Unique Student ID:").strip().upper()
-                stu_name = st.text_input("Student Full Name:")
-                stu_class = st.text_input("Class / Form:")
-                stu_status = st.selectbox("Current Status:", ["Paid", "Pending"])
+                stu_id = st.text_input("New Registration Key (Unique ID):").strip().upper()
+                stu_name = st.text_input("Full Legal Name Entry:")
+                stu_class = st.text_input("Assigned Class Module / Form:")
+                stu_status = st.selectbox("Initial Financial State:", ["Paid", "Pending"])
                 
-                submit_button = st.form_submit_button("Save Student to Database")
+                submit_button = st.form_submit_button("Commit Entry To SQLite Disk Data Store")
                 
                 if submit_button:
                     if not stu_id or not stu_name or not stu_class:
-                        st.error("All input fields are required.")
+                        st.error("Structural integrity violation: Null field instances detected.")
                     else:
                         success = add_student(stu_id, stu_name, stu_class, stu_status)
                         if success:
-                            st.success(f"Successfully added {stu_name}!")
+                            st.success(f"Write validation success: Created entry tracking record for {stu_name}!")
                             st.rerun()
                         else:
-                            st.error(f"Error: A student with ID {stu_id} already exists.")
+                            st.error(f"Write violation conflict: Registration key primary index value '{stu_id}' already assigned.")
