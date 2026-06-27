@@ -1,7 +1,7 @@
 import sqlite3
 import streamlit as st
 
-# --- PAGE SETUP & MODERN GRAPHICS THEME ---
+# --- PAGE SETUP & LOVABLE DESIGN ENGINE ---
 st.set_page_config(
     page_title="Adventist Senior High - PTA Portal", 
     page_icon="💳", 
@@ -51,7 +51,7 @@ def get_student_by_name(full_name):
 def get_all_students():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, class, track, house, status FROM students")
+    cursor.execute("SELECT id, name, class, track, house, status FROM students ORDER BY rowid DESC")
     rows = cursor.fetchall()
     conn.close()
     return {row[0]: {"name": row[1], "class": row[2], "track": row[3], "house": row[4], "status": row[5]} for row in rows}
@@ -88,224 +88,253 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Welcome"
+if "show_add_form" not in st.session_state:
+    st.session_state.show_add_form = False
 
 ADMIN_PASSCODE = "secure123"
 
-# --- GLOBAL STYLED NAVBAR ---
+# --- CSS CARD CUSTOM STYLING ---
 st.markdown("""
     <style>
-    .navbar {
-        background: linear-gradient(135deg, #1E3A8A, #3B82F6);
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 30px;
+    /* White Navbar header strip matching image */
+    .top-header {
+        background-color: #ffffff;
+        padding: 14px 45px;
+        border-bottom: 1px solid #E5E7EB;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin: -4rem -4rem 2rem -4rem;
     }
-    .navbar-title {
-        color: white !important;
-        font-size: 26px !important;
+    .header-left-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .school-title-text {
+        font-size: 18px !important;
         font-weight: 700;
+        color: #1E293B;
         margin: 0;
-        font-family: 'Inter', sans-serif;
+        line-height: 1.2;
+    }
+    .portal-tagline {
+        font-size: 11px !important;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+    
+    /* Metrics numbers adjustments */
+    div[data-testid="stMetricValue"] {
+        font-size: 30px !important;
+        font-weight: 700 !important;
+        color: #0F172A !important;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        color: #64748B !important;
+        font-weight: 600 !important;
     }
     </style>
-    <div class="navbar">
-        <div class="navbar-title">🏫 Adventist Senior High School</div>
-    </div>
 """, unsafe_allow_html=True)
 
+# --- INJECT TOP NAVBAR HEADER ---
+st.markdown("""
+<div class="top-header">
+    <div class="header-left-box">
+        <span style="font-size: 26px;">🏫</span>
+        <div>
+            <div class="school-title-text">Adventist SHS</div>
+            <div class="portal-tagline">Prefect Portal</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# --- ROUTING PLATFORM ENGINE ---
-
-# --- PAGE 1: WELCOME/LANDING PAGE ---
-if st.session_state.current_page == "Welcome":
-    st.title("Welcome to the PTA Portal")
-    st.markdown("### Secure Payment Tracking & Status Verification")
-    st.write("Welcome to the official Adventist Senior High PTA portal. This platform allows parents and students to securely check dues balances, while providing administrative functions to authorized staff members.")
-    
-    st.markdown("---")
-    if st.button("🚀 Access Portal Selection Screen", use_container_width=True):
-        st.session_state.current_page = "Portal Selection"
-        st.rerun()
-
-
-# --- PAGE 2: PORTAL SELECTION INTERFACE ---
-elif st.session_state.current_page == "Portal Selection":
-    st.subheader("Select Your Destination Portal")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.info("### 🎓 Student Directory Portal")
-        st.write("Verify status live on the network using formal registration credentials.")
-        if st.button("Enter Student View", use_container_width=True):
-            st.session_state.current_page = "Student Dashboard"
-            st.rerun()
-            
-    with col2:
-        st.warning("### ⚙️ Administrative Hub")
-        st.write("Secure database controller operations. Requires validation passcode.")
-        if st.button("Enter Admin View", use_container_width=True):
-            st.session_state.current_page = "Admin Dashboard"
-            st.rerun()
-            
-    st.markdown("---")
-    if st.button("↩️ Return to Home Landing Page"):
+# Right-aligned floating sign-out control button layer
+nav_space1, nav_space2 = st.columns([5.2, 0.8])
+with nav_space2:
+    if st.session_state.current_page != "Welcome" and st.button("🚪 Sign out", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.show_add_form = False
         st.session_state.current_page = "Welcome"
         st.rerun()
 
 
-# --- PAGE 3: STUDENT DASHBOARD ---
-elif st.session_state.current_page == "Student Dashboard":
-    st.title("🎓 Student Verification Dashboard")
-    st.write("Enter your Full Name below to check live financial status accounts.")
+# --- PUBLIC LANDING PAGE ROUTE ---
+if st.session_state.current_page == "Welcome":
+    st.title("Welcome to the PTA Portal")
+    st.markdown("### Secure Payment Tracking & Status Verification")
     
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🎓 Student Dashboard View", use_container_width=True):
+            st.session_state.current_page = "Student Dashboard"
+            st.rerun()
+    with c2:
+        if st.button("⚙️ Admin Dashboard View", use_container_width=True):
+            st.session_state.current_page = "Admin Dashboard"
+            st.rerun()
+
+
+# --- STUDENT VERIFICATION VIEW ---
+elif st.session_state.current_page == "Student Dashboard":
+    st.markdown("### 🎓 Student Directory Search")
     search_name = st.text_input("Enter Student Full Name:", placeholder="e.g., Kwame Mensah").strip()
     
     if search_name:
         student = get_student_by_name(search_name)
         if student:
-            st.success(f"Record matched for system entity: **{student['name']}**")
+            st.success(f"Record matched: **{student['name']}**")
             if student['status'] == "Paid":
-                st.info("🟢 **Payment Ledger Status:** Verified Fully Paid")
+                st.info("🟢 **Payment Dues Status:** Verified Fully Paid")
             else:
-                st.warning("🟡 **Payment Ledger Status:** Account Pending / Balance Unpaid")
-                
+                st.warning("🟡 **Payment Dues Status:** Pending / Unpaid Balance")
             st.markdown(f"""
-            * **Assigned Unique ID:** {student['id']}
-            * **Current Registered Form:** {student['class']}
-            * **Academic Program Track:** {student['track']}
-            * **House of Residence:** {student['house']}
+            * **Student ID:** {student['id']}
+            * **Form Group:** {student['class']}
+            * **Academic Track:** {student['track']}
+            * **House:** {student['house']}
             """)
         else:
-            st.error("No valid system record matches that name configuration. Check spellings or consult administration fields.")
-            
-    st.markdown("---")
-    if st.button("↩️ Back to Selection Screen", use_container_width=True):
-        st.session_state.current_page = "Portal Selection"
-        st.rerun()
+            st.error("No record found matching that name setup.")
 
 
-# --- PAGE 4: MODERN ADASSHUB LOVABLE-STYLE ADMIN PANEL ---
+# --- DYNAMIC ADMIN DASHBOARD PANEL PANEL ---
 elif st.session_state.current_page == "Admin Dashboard":
     if not st.session_state.logged_in:
-        st.title("🔒 Security Access Required")
-        st.write("Enter system authorization key to clear network interface access routines.")
-        
-        with st.form("admin_login_container"):
-            entered_passcode = st.text_input("Security Access Passcode:", type="password")
-            login_trigger = st.form_submit_button("Verify Passcode Credentials")
-            
-            if login_trigger:
-                if entered_passcode == ADMIN_PASSCODE:
+        st.subheader("🔒 Administrative Gateway Verification")
+        with st.form("login_container_form"):
+            passcode_attempt = st.text_input("Enter Passcode Key:", type="password")
+            if st.form_submit_button("Verify Access Keys"):
+                if passcode_attempt == ADMIN_PASSCODE:
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("Invalid passcode token entry sequence. Authentication rejected.")
-                    
-        st.markdown("---")
-        if st.button("↩️ Abort & Back to Portal Selection"):
-            st.session_state.current_page = "Portal Selection"
-            st.rerun()
-
+                    st.error("Invalid credentials entered.")
     else:
-        # Dashboard Header Section with a Lovable-style clean layout
-        h_col1, h_col2 = st.columns([5, 1])
-        with h_col1:
-            st.title("⚙️ Administration Hub")
-            st.markdown("##### System Environment: Active Data Administrator")
-        with h_col2:
-            st.markdown(" ")
-            if st.button("🔒 Revoke Session", use_container_width=True):
-                st.session_state.logged_in = False
-                st.session_state.current_page = "Portal Selection"
-                st.rerun()
-                
+        # Layout Header contexts matching image precisely
+        st.markdown("<p style='color:#3B82F6; font-weight:700; font-size:12px; margin:0; text-transform:uppercase;'>ADMIN</p>", unsafe_allow_html=True)
+        
+        t_col, b_col = st.columns([3.5, 2.5])
+        with t_col:
+            st.markdown("<h1 style='margin-top:0; font-weight:800; font-size:38px; color:#0F172A;'>Dashboard</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#64748B; margin-top:-10px; font-size:14px;'>Overview of the student directory.</p>", unsafe_allow_html=True)
+            
+        with b_col:
+            st.markdown("<div style='height:15px;'></div>", unsafe_allow_html=True)
+            act_1, act_2, act_3 = st.columns([1, 1.2, 1.8])
+            with act_2:
+                if st.button("🛡️ Admins", use_container_width=True):
+                    st.toast("System status clearance verified.")
+            with act_3:
+                if st.button("➕ Manage students", type="primary", use_container_width=True):
+                    st.session_state.show_add_form = not st.session_state.show_add_form
+                    st.rerun()
+
         all_students = get_all_students()
         
-        # Real-time Web App Metrics
-        total_count = len(all_students)
-        paid_count = sum(1 for info in all_students.values() if info['status'] == "Paid")
-        pending_count = total_count - paid_count
-        
-        st.markdown("---")
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Total Active Indexes", total_count)
-        m_col2.metric("Settled Ledgers (Paid)", paid_count, delta=f"{paid_count/max(total_count,1)*100:.1f}% Allocation")
-        m_col3.metric("Outstanding Accounts", pending_count)
-        st.markdown("---")
-        
-        # Tabbed Control Structures
-        tab1, tab2 = st.tabs(["📋 View Directory Records", "➕ Write New Database Entries"])
-        
-        with tab1:
-            st.subheader("System Data Storage Registry")
-            if not all_students:
-                st.info("Empty database instances returned.")
-            else:
-                col1, col2, col3, col4, col5, col6 = st.columns([1.0, 2.0, 1.0, 1.5, 1.5, 1.0])
-                col1.markdown("**ID**")
-                col2.markdown("**Name**")
-                col3.markdown("**Form**")
-                col4.markdown("**Academic Track**")
-                col5.markdown("**House**")
-                col6.markdown("**Status / Action**")
-                st.markdown(" ")
-                
-                for current_id, info in all_students.items():
-                    c1, c2, c3, c4, c5, c6 = st.columns([1.0, 2.0, 1.0, 1.5, 1.5, 1.0])
-                    c1.text(current_id)
-                    c2.text(info['name'])
-                    c3.text(info['class'])
-                    c4.text(info['track'])
-                    c5.text(info['house'])
+        # Pull layout analytic tracking states
+        total_st = len(all_students)
+        total_houses = len(set(info['house'] for info in all_students.values())) if total_st > 0 else 0
+        total_tracks = len(set(info['track'] for info in all_students.values())) if total_st > 0 else 0
+        total_paid_30d = total_st
+
+        # Metrics cards block row grid
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.markdown("<div style='background:#ffffff; padding:20px; border:1px solid #E2E8F0; border-radius:12px;'>", unsafe_allow_html=True)
+            st.metric(label="👥 Students", value=total_st)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with m2:
+            st.markdown("<div style='background:#ffffff; padding:20px; border:1px solid #E2E8F0; border-radius:12px;'>", unsafe_allow_html=True)
+            st.metric(label="🏠 Houses", value=total_houses)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with m3:
+            st.markdown("<div style='background:#ffffff; padding:20px; border:1px solid #E2E8F0; border-radius:12px;'>", unsafe_allow_html=True)
+            st.metric(label="🔖 Tracks / Positions", value=total_tracks)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with m4:
+            st.markdown("<div style='background:#ffffff; padding:20px; border:1px solid #E2E8F0; border-radius:12px;'>", unsafe_allow_html=True)
+            st.metric(label="📅 Added (30D)", value=total_paid_30d)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Dropdown sub-panel form for record creation
+        if st.session_state.show_add_form:
+            st.markdown("<div style='background:#F8FAFC; padding:25px; border-radius:12px; border:1px dashed #CBD5E1;'>", unsafe_allow_html=True)
+            st.subheader("Write New Student Profile")
+            with st.form("input_form_panel", clear_on_submit=True):
+                f_c1, f_c2 = st.columns(2)
+                with f_c1:
+                    i_id = st.text_input("Unique Student ID:").strip().upper()
+                    i_name = st.text_input("Full Name:")
+                    i_class = st.selectbox("Form level:", ["Form 1", "Form 2", "Form 3"])
+                with f_c2:
+                    i_track = st.selectbox("Academic Track:", ["General Science", "General Arts", "Business", "Home Economics"])
+                    i_house = st.text_input("Dormitory House Name:")
+                    i_status = st.selectbox("Payment State:", ["Paid", "Pending"])
                     
-                    status_list = ["Paid", "Pending"]
-                    current_idx = status_list.index(info['status'])
-                    new_status = c6.selectbox(
-                        "Modify State", status_list, index=current_idx, key=f"status_{current_id}", label_visibility="collapsed"
-                    )
-                    
-                    if new_status != info['status']:
-                        update_student_status(current_id, new_status)
-                        st.rerun()
-                        
-        with tab2:
-            st.subheader("Write Fresh Structural Student Block")
-            # --- CUSTOM RESTRUCTURED FORM (LOVABLE-STYLE DATA PANEL GRID) ---
-            with st.form("add_student_form", clear_on_submit=True):
-                f_col1, f_col2 = st.columns(2)
-                
-                with f_col1:
-                    stu_id = st.text_input("New Registration Key (Unique ID):", placeholder="e.g., ASHS-2026-001").strip().upper()
-                    stu_name = st.text_input("Full Legal Name Entry:", placeholder="e.g., Emmanuel Mensah")
-                    stu_class = st.selectbox("Assigned Form / Year Group:", ["Form 1", "Form 2", "Form 3"])
-                
-                with f_col2:
-                    stu_track = st.selectbox("Academic Track / Program:", [
-                        "General Science", 
-                        "General Arts", 
-                        "Business", 
-                        "Home Economics", 
-                        "Visual Arts",
-                        "Agricultural Science"
-                    ])
-                    stu_house = st.text_input("House of Residence / Dormitory:", placeholder="e.g., Kennedy House")
-                    stu_status = st.selectbox("Initial Financial State:", ["Paid", "Pending"])
-                
-                st.markdown(" ")
-                submit_button = st.form_submit_button("Commit Entry To SQLite Disk Data Store", use_container_width=True)
-                
-                if submit_button:
-                    if not stu_id or not stu_name or not stu_house:
-                        st.error("Structural integrity violation: Null field instances detected.")
+                if st.form_submit_button("Commit Changes To Database", use_container_width=True):
+                    if not i_id or not i_name or not i_house:
+                        st.error("Fields cannot be left blank.")
                     else:
-                        success = add_student(stu_id, stu_name, stu_class, stu_track, stu_house, stu_status)
-                        if success:
-                            st.success(f"Write validation success: Created entry tracking record for {stu_name}!")
+                        if add_student(i_id, i_name, i_class, i_track, i_house, i_status):
+                            st.success(f"Successfully recorded data profile for {i_name}.")
+                            st.session_state.show_add_form = False
                             st.rerun()
                         else:
-                            st.error(f"Write violation conflict: Registration key primary index value '{stu_id}' already assigned.")
+                            st.error("Unique key registration collision: This ID already exists.")
+            st.markdown("</div><br>", unsafe_allow_html=True)
+
+        # Split Card container block display area
+        left_panel, right_panel = st.columns([1.2, 2.0])
+        
+        with left_panel:
+            st.markdown("<div style='background:#ffffff; padding:24px; border:1px solid #E2E8F0; border-radius:12px; min-height:320px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='display:flex; justify-content:space-between;'><b style='font-size:16px; color:#0F172A;'>By house</b><span style='color:#64748B; font-size:12px;'>Total</span></div>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #F1F5F9;'>", unsafe_allow_html=True)
+            
+            if not all_students:
+                st.markdown("<p style='color:#64748B; font-size:14px;'>No data yet.</p>", unsafe_allow_html=True)
+            else:
+                house_metrics = {}
+                for item in all_students.values():
+                    house_metrics[item['house']] = house_metrics.get(item['house'], 0) + 1
+                for house, total in house_metrics.items():
+                    st.markdown(f"🏠 **{house}:** {total} student(s)")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with right_panel:
+            st.markdown("<div style='background:#ffffff; padding:24px; border:1px solid #E2E8F0; border-radius:12px; min-height:320px;'>", unsafe_allow_html=True)
+            st.markdown("<b style='font-size:16px; color:#0F172A;'>Recently added</b>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #F1F5F9;'>", unsafe_allow_html=True)
+            
+            if not all_students:
+                st.markdown("<div style='text-align:center; padding:40px 0; color:#64748B;'>No students yet.</div>", unsafe_allow_html=True)
+                if st.button("➕ Add the first one", type="primary"):
+                    st.session_state.show_add_form = True
+                    st.rerun()
+            else:
+                for current_id, info in all_students.items():
+                    r1, r2, r3, r4 = st.columns([1.5, 3.5, 2.5, 1.5])
+                    r1.text(current_id)
+                    r2.markdown(f"**{info['name']}** \n`{info['class']} - {info['house']}`")
+                    
+                    status_choices = ["Paid", "Pending"]
+                    idx = status_choices.index(info['status'])
+                    updated_st = r3.selectbox("Status Update", status_choices, index=idx, key=f"tbl_st_{current_id}", label_visibility="collapsed")
+                    if updated_st != info['status']:
+                        update_student_status(current_id, updated_st)
+                        st.rerun()
+                        
+                    if r4.button("🗑️", key=f"tbl_del_{current_id}", help="Delete Entry"):
+                        delete_student(current_id)
+                        st.rerun()
+                    st.markdown("<div style='border-bottom:1px solid #F1F5F9; margin:6px 0;'></div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
